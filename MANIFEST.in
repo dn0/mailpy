@@ -1,0 +1,6 @@
+include README.rst
+include LICENSE
+include MANIFEST.in
+include setup.py
+recursive-include mailpy *.py
+recursive-include contrib *.py
