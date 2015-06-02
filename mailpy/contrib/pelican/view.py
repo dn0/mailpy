@@ -150,8 +150,8 @@ class PelicanMailView(MailView):
     @staticmethod
     def _edit_msg_text(text):
         """Process text extracted from mail message and return text suitable for article content"""
-        # Fix automatic links, e.g. "<www.google.com> <http://www.google.com>"
-        return re.sub(r'([^\s]+) <([\w\+]+:/*)?\1/?>', r'\1', text)
+        # Fix automatic links injected by mail clients, e.g. "<www.google.com> <http://www.google.com>"
+        return re.sub(r'([^\s]+) <([\w\+]+:/*)?\1/?>(?!`_)', r'\1', text)
 
     def _get_msg_content(self, msg, article):
         """Parse message and retrieve text content and additional file attachments"""
