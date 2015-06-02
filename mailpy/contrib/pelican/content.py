@@ -63,8 +63,8 @@ class PelicanContentFile(object):
         """Get file full path"""
         return os.path.abspath(os.path.join(self.content_path, self.filename))
 
-    @staticmethod
-    def _delete(file_path):
+    # noinspection PyMethodMayBeStatic
+    def _delete(self, file_path):
         """Actual file delete operation"""
         os.remove(file_path)
 
@@ -123,8 +123,7 @@ class PelicanArticle(PelicanContentFile):
         """Parse file metadata from file's path"""
         return parse_path_metadata(self.filename, settings=settings)
 
-    @staticmethod
-    def _compose(title, text, metadata):
+    def _compose(self, title, text, metadata):
         """Return new content from supplied parameters"""
         raise NotImplementedError
 
@@ -148,8 +147,7 @@ class RstArticle(PelicanArticle):
     extension = '.rst'
     file_extensions = ('rst',)
 
-    @staticmethod
-    def _compose(title, text, metadata):
+    def _compose(self, title, text, metadata):
         return '%(title)s\n%(title_underscore)s\n\n%(metadata)s\n\n%(text)s\n' % {
             'title': title,
             'title_underscore': '#' * len(title),
@@ -171,8 +169,7 @@ class MarkdownArticle(PelicanArticle):
     extension = '.md'
     file_extensions = ('md', 'markdown', 'mkd', 'mdown')
 
-    @staticmethod
-    def _compose(title, text, metadata):
+    def _compose(self, title, text, metadata):
         metadata['title'] = title
 
         return '%(metadata)s\n\n# %(title)s\n\n%(text)s\n' % {
