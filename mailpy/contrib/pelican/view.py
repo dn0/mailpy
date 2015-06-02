@@ -2,6 +2,7 @@
 from functools import wraps
 from datetime import datetime
 import os
+import re
 
 from mailpy.view import MailView
 from mailpy.response import TextMailResponse
@@ -146,6 +147,12 @@ class PelicanMailView(MailView):
 
         return content.decode(charset, 'replace')
 
+    @staticmethod
+    def _edit_msg_text(text):
+        """Process text extracted from mail message and return text suitable for article content"""
+        # Fix automatic links, e.g. "<www.google.com> <http://www.google.com>"
+        return re.sub(r'([^\s]+) <([\w\+]+:/*)?\1/?>', r'\1', text)
+
     def _get_msg_content(self, msg, article):
         """Parse message and retrieve text content and additional file attachments"""
         text = []
@@ -174,7 +181,8 @@ class PelicanMailView(MailView):
                                                            encoding=part.get_content_charset()))  # Store raw
 
                 elif content_type in self._valid_text_content_type:  # Article text
-                    text.append(self._get_msg_text(part, msg.get_charset()))  # Decode using content charset
+                    msg_text = self._get_msg_text(part, msg.get_charset())  # Decode using content charset
+                    text.append(self._edit_msg_text(msg_text))
 
         return '\n\n'.join(text), files
 
