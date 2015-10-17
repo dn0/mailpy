@@ -11,7 +11,7 @@ from mailpy.contrib.filelock import FileLock, FileLockTimeout
 from mailpy.contrib.pelican.api import PelicanAPI
 from mailpy.contrib.pelican.utils import stringify, slugify
 from mailpy.contrib.pelican.content import RstArticle
-from mailpy.contrib.pelican.exceptions import FileNotFound, FileAlreadyExists
+from mailpy.contrib.pelican.exceptions import FileNotFound, FileAlreadyExists, UnknownFileFormat
 
 __all__ = ('PelicanMailView',)
 
@@ -78,9 +78,8 @@ class PelicanMailView(MailView):
 
     def _create_article_slug(self, title, articles):
         """Create unique article slug from title"""
-        settings = self.papi.settings
         slug = orig_slug = slugify(title)
-        slugs = [a.get_path_metadata(settings)['slug'] for a in articles]
+        slugs = self.papi.get_article_slugs(articles=articles)  # dict {slug: article}
         i = 1
 
         while slug in slugs:
@@ -99,7 +98,7 @@ class PelicanMailView(MailView):
     def _create_article_filename(self, slug, articles):
         """Create new unique filename from title"""
         filename = self.__create_article_filename(slug)
-        filenames = [a.filename for a in articles]
+        filenames = set(a.filename for a in articles)
         i = 1
 
         while filename in filenames:
@@ -129,7 +128,7 @@ class PelicanMailView(MailView):
             orig_filename = 'noname'
 
         filename = os.path.join(directory, orig_filename)
-        static_files = self.papi.get_static_files(directory)
+        static_files = set(self.papi.get_static_files(directory))
         name, ext = os.path.splitext(filename)
         i = 1
 
@@ -222,20 +221,24 @@ class PelicanMailView(MailView):
 
         return created
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def _delete_article(request, article):
         """Delete article"""
         # TODO: delete related static files
-        deleted = []
+        article.delete()
 
+        return [article.full_path]
+
+    def _get_article(self, request, title_or_filename):
+        """Fetch existing article according to title or filename"""
         try:
-            article.delete()
+            try:
+                return self.papi.get_article(title_or_filename)
+            except UnknownFileFormat:
+                return self.papi.get_article_by_slug(slugify(title_or_filename.lstrip('Re: ')))
         except FileNotFound:
-            raise MailViewError(request, 'Article "%s" was not found' % article, status_code=404)
-        else:
-            deleted.append(article.full_path)
-
-        return deleted
+            raise MailViewError(request, 'Article "%s" was not found' % title_or_filename, status_code=404)
 
     def _commit_and_publish(self, commit_msg, **commit_kwargs):
         """Commit to git if repo_path is set and update html files"""
@@ -258,13 +261,8 @@ class PelicanMailView(MailView):
         filename = request.subject.strip()
 
         if filename:
-            try:
-                article = self.papi.get_article(filename)
-                article.load()
-            except FileNotFound:
-                raise MailViewError(request, 'Article "%s" was not found' % filename, status_code=404)
-            else:
-                res = article.content
+            article = self._get_article(request, filename)
+            res = article.load()
         else:
             res = '\n'.join(a.filename for a in self.papi.articles)
 
@@ -301,7 +299,7 @@ class PelicanMailView(MailView):
         if not filename:
             raise MailViewError(request, 'Subject (filename) is required')
 
-        article = self.papi.get_article(filename)
+        article = self._get_article(request, filename)
         deleted = self._delete_article(request, article)
 
         self._commit_and_publish('Deleted article %s' % article, remove=deleted)
