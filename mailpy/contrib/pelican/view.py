@@ -50,6 +50,7 @@ class PelicanMailView(MailView):
     _valid_content_maintypes = frozenset(('text', 'image', 'audio', 'video', 'application'))
     _valid_text_content_type = frozenset(('text/plain',))
     _ignored_file_content_types = frozenset(('text/x-vcard', 'text/vcard',
+                                             'application/pgp-signature',
                                              'application/x-pkcs12',
                                              'application/x-pkcs7-signature',
                                              'application/x-pkcs7-mime',
