@@ -4,7 +4,7 @@ from __future__ import absolute_import
 import os
 import errno as err
 
-__all__ = ('PelicanAPIError', 'FileNotFound', 'FileAlreadyExists', 'UnknownFileFormat')
+__all__ = ('PelicanAPIError', 'FileNotFound', 'FileAlreadyExists', 'MultipleFilesFound', 'UnknownFileFormat')
 
 
 class PelicanAPIError(Exception):
@@ -28,6 +28,13 @@ class FileAlreadyExists(PelicanAPIError, OSError):
     """
     errno = err.EEXIST
     strerror = os.strerror(err.EEXIST)
+
+
+class MultipleFilesFound(PelicanAPIError):
+    """
+    Multiple files exist on FS.
+    """
+    pass
 
 
 class UnknownFileFormat(PelicanAPIError):
