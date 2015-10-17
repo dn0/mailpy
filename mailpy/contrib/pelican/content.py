@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+import re
 import os
 import codecs
 
@@ -113,6 +114,7 @@ class PelicanArticle(PelicanContentFile):
     """
     encoding = 'utf-8'
     extension = NotImplemented
+    re_metadata = NotImplemented
 
     def _load(self, file_path):
         """Read text file content from disk (pelican style)"""
@@ -126,6 +128,23 @@ class PelicanArticle(PelicanContentFile):
     def get_path_metadata(self, settings):
         """Parse file metadata from file's path"""
         return parse_path_metadata(self.filename, settings=settings)
+
+    def _parse_metadata(self, metadata, line):
+        """Parse metadata from one line of text and update the metadata dict"""
+        found = self.re_metadata.match(line)
+
+        if found:
+            metadata[found.group(1).lower()] = found.group(2)
+            return True
+        else:
+            return False
+
+    def get_text_metadata(self, text):
+        """Separate metadata from text and return (new text, metadata) tuple"""
+        metadata = {}
+        new_text = '\n'.join(line for line in text.splitlines() if not self._parse_metadata(metadata, line))
+
+        return new_text, metadata
 
     def _compose(self, title, text, metadata):
         """Return new content from supplied parameters"""
@@ -150,6 +169,7 @@ class RstArticle(PelicanArticle):
     """
     extension = '.rst'
     file_extensions = ('rst',)
+    re_metadata = re.compile(r'^:(\w+):\s+(.+)$')
 
     def _compose(self, title, text, metadata):
         return '%(title)s\n%(title_underscore)s\n\n%(metadata)s\n\n%(text)s\n' % {
@@ -172,6 +192,7 @@ class MarkdownArticle(PelicanArticle):
     """
     extension = '.md'
     file_extensions = ('md', 'markdown', 'mkd', 'mdown')
+    re_metadata = re.compile(r'^  ([A-Z]\w*):\s+(.+)$')
 
     def _compose(self, title, text, metadata):
         metadata['title'] = title
