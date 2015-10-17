@@ -63,6 +63,10 @@ class PelicanContentFile(object):
         """Get file full path"""
         return os.path.abspath(os.path.join(self.content_path, self.filename))
 
+    def exists(self):
+        """Return True if file exists on FS"""
+        return os.path.isfile(self.full_path)
+
     # noinspection PyMethodMayBeStatic
     def _delete(self, file_path):
         """Actual file delete operation"""
@@ -70,7 +74,7 @@ class PelicanContentFile(object):
 
     def delete(self):
         """Remove file from disk"""
-        if not os.path.isfile(self.full_path):
+        if not self.exists():
             raise FileNotFound(self)
 
         self._delete(self.full_path)
@@ -82,7 +86,7 @@ class PelicanContentFile(object):
 
     def load(self):
         """Load and return file content from disk"""
-        if not os.path.isfile(self.full_path):
+        if not self.exists():
             raise FileNotFound(self)
 
         self.content = self._load(self.full_path)
@@ -96,7 +100,7 @@ class PelicanContentFile(object):
 
     def save(self):
         """Write file content to disk"""
-        if os.path.isfile(self.full_path):
+        if self.exists():
             raise FileAlreadyExists(self)
 
         self._save(self.full_path, self.content)
