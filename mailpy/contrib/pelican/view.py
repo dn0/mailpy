@@ -194,7 +194,7 @@ class PelicanMailView(MailView):
         new_text, parsed_metadata = article.get_text_metadata(text)
         metadata.update(parsed_metadata)
 
-        return text, metadata
+        return new_text, metadata
 
     @staticmethod
     def _save_article(request, article, static_files):
