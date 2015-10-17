@@ -185,13 +185,16 @@ class PelicanMailView(MailView):
 
         return '\n\n'.join(text), files
 
-    # noinspection PyUnusedLocal
-    def _get_article_metadata(self, request, text):
+    def _get_article_metadata(self, request, article, text):
         """Create article metadata"""
-        return {
+        metadata = {
             'date': datetime.now().strftime('%Y-%m-%d %H:%M'),
             'authors': self._get_author_from_email(request.sender, request.sender),
         }
+        new_text, parsed_metadata = article.get_text_metadata(text)
+        metadata.update(parsed_metadata)
+
+        return text, metadata
 
     @staticmethod
     def _save_article(request, article, static_files):
@@ -278,7 +281,8 @@ class PelicanMailView(MailView):
 
         article = self._create_article(title)
         text, static_files = self._get_msg_content(request, article)
-        article.compose(title, text, self._get_article_metadata(request, text))
+        text, metadata = self._get_article_metadata(request, article, text)
+        article.compose(title, text, metadata)
         created = self._save_article(request, article, static_files)
         commit_msg = 'Added article %s' % article.filename
 
