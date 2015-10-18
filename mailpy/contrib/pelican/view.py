@@ -47,6 +47,7 @@ class PelicanMailView(MailView):
     site_url = None
     authors = ()
     lock_file = None
+    detect_image_attachments = frozenset(('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff'))
     _valid_content_maintypes = frozenset(('text', 'image', 'audio', 'video', 'application'))
     _valid_text_content_type = frozenset(('text/plain',))
     _ignored_file_content_types = frozenset(('text/x-vcard', 'text/vcard',
@@ -170,8 +171,9 @@ class PelicanMailView(MailView):
                         continue  # Ignore vcard, digital signatures and stuff like this
 
                     filename = self._create_static_filename(maintype, orig_filename)
+                    ext = os.path.splitext(orig_filename)[1].lower()
 
-                    if maintype == 'image':
+                    if maintype == 'image' or ext in self.detect_image_attachments:
                         text_data = article.image(orig_filename, '{filename}/%s' % filename)
                     else:
                         text_data = article.internal_link(orig_filename, '{filename}/%s' % filename)
