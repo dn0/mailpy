@@ -11,7 +11,7 @@ from mailpy.contrib.filelock import FileLock, FileLockTimeout
 from mailpy.contrib.pelican.api import PelicanAPI
 from mailpy.contrib.pelican.utils import stringify, slugify
 from mailpy.contrib.pelican.content import RstArticle
-from mailpy.contrib.pelican.exceptions import FileNotFound, FileAlreadyExists, UnknownFileFormat
+from mailpy.contrib.pelican.exceptions import FileNotFound, FileAlreadyExists, MultipleFilesFound, UnknownFileFormat
 
 __all__ = ('PelicanMailView',)
 
@@ -245,6 +245,10 @@ class PelicanMailView(MailView):
                 return self.papi.get_article_by_slug(slugify(title_or_filename.lstrip('Re: ')))
         except FileNotFound:
             raise MailViewError(request, 'Article "%s" was not found' % title_or_filename, status_code=404)
+        except MultipleFilesFound:
+            err = 'Found multiple articles related to the title "%s".\n' \
+                  'Please use the filename to find specific article.' % title_or_filename
+            raise MailViewError(request, err, status_code=406)
 
     def _commit_and_publish(self, commit_msg, **commit_kwargs):
         """Commit to git if repo_path is set and update html files"""
